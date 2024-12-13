@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import Charts
 
 struct ContentView: View {
     @Environment(ProductivityViewModel.self) private var viewModel
@@ -74,6 +75,13 @@ struct ContentView: View {
         newTaskToEdit = newTask
     }
     
+    private func daysRemaining(until targetDate: Date) -> Int {
+        let currentDate = Date()
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.day], from: currentDate, to: targetDate)
+        return components.day ?? 0
+    }
+    
     private func deleteTask(_ task: Task) {
         viewModel.deleteTask(task)
     }
@@ -118,15 +126,15 @@ struct ContentView: View {
                     } label: {
                         HStack {
                             Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(task.completed ? .green : .blue) // Dynamic color for task status
+                                .foregroundColor(task.completed ? .green : .blue)
                                 .font(.title2)
                             Text(task.name)
-                                .strikethrough(task.completed, color: .green) // Strikethrough for completed tasks
-                                .foregroundColor(task.completed ? .gray : .primary) // Dim completed tasks
+                                .strikethrough(task.completed, color: .green)
+                                .foregroundColor(task.completed ? .gray : .primary)
                                 .fontWeight(task.completed ? .medium : .bold)
                         }
                         .padding(.vertical, 4)
-                        .background(task.completed ? Color.green.opacity(0.2) : Color.blue.opacity(0.1)) // Subtle background color
+                        .background(task.completed ? .green.opacity(0.2) : .blue.opacity(0.1))
                         .cornerRadius(8)
                     }
                     .animation(.easeInOut, value: task.completed) // Smooth animation
@@ -153,16 +161,16 @@ struct ContentView: View {
         .searchable(text: $searchText)
     }
     
-    
-    
+
+
     private func taskDetailView(task: Task) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Constants.spacing) {
-                // Header with Task Name
+            
                 ZStack {
                     RoundedRectangle(cornerRadius: ContentConstants.cornerRadius)
                         .fill(LinearGradient(gradient: Gradient(colors: [.blue, .cyan]), startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .shadow(radius: 5)
+                        .shadow(radius: ContentConstants.bottomPadding)
                     VStack(alignment: .center, spacing: 8) {
                         Text("🎯 \(task.name)")
                             .font(.title)
@@ -224,21 +232,54 @@ struct ContentView: View {
                             Text("\(task.plannedCompletedDate.formatted(.dateTime.month().day().year()))")
                                 .foregroundColor(.secondary)
                         }
+                        
+                        // Days Remaining
+                        HStack {
+                            Text("⏳ Days Remaining:")
+                                .fontWeight(.semibold)
+                            Text("\(daysRemaining(until: task.plannedCompletedDate)) days")
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 .padding(.bottom, Constants.padding)
 
-                // Progress Bar for Encouragement
+                // **Task Completion Chart (Bar Chart)**
                 VStack(alignment: .leading) {
-                    Text(task.completed ? "🎉 Great job! You completed this task." : "🚀 Keep it up!")
+                    let totalTasks = viewModel.allTasks.count
+                    let completedTasks = viewModel.allTasks.filter { $0.completed }.count
+                    let remainingTasks = totalTasks - completedTasks
+                    
+                    Text("📊 Task Completion Status")
                         .font(.headline)
-                        .foregroundColor(task.completed ? .green : .blue)
-                        .padding(.bottom, 5)
+                        .padding(.bottom, ContentConstants.bottomPadding)
 
-                    ProgressView(value: task.completed ? 1.0 : 0.5)
-                        .progressViewStyle(LinearProgressViewStyle(tint: task.completed ? .green : .blue))
-                        .scaleEffect(x: 1, y: 2, anchor: .center)
-                        .animation(.easeInOut, value: task.completed)
+                    // Bar Chart Showing Completed vs Remaining
+                    Chart {
+                        BarMark(
+                            x: .value("Status", "Completed"),
+                            y: .value("Count", completedTasks)
+                        )
+                        .foregroundStyle(.green)
+                        .cornerRadius(5)
+
+                        BarMark(
+                            x: .value("Status", "Remaining"),
+                            y: .value("Count", remainingTasks)
+                        )
+                        .foregroundStyle(.blue)
+                        .cornerRadius(5)
+                    }
+                    .frame(height: 250)
+                    .padding(.bottom, ContentConstants.bottomPadding)
+
+                    Text("Completed: \(completedTasks) / Total: \(totalTasks)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    Text("Remaining Tasks: \(remainingTasks)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
                 .padding(.vertical, Constants.padding)
 
@@ -261,14 +302,17 @@ struct ContentView: View {
 
 
 
-
-    
     private struct ContentConstants {
+        static let bottomPadding: CGFloat = 5
+        static let completed = 1.0
         static let cornerRadius: CGFloat = 12
         static let filledHeart = "heart.fill"
+        static let halfdone = 0.5
         static let heart = "heart"
         static let opacity: CGFloat = 0.2
         static let pencil = "pencil"
+        static let scaleX: CGFloat = 1
+        static let scaleY: CGFloat = 2
     }
     
 }
