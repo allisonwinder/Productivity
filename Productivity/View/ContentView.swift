@@ -65,7 +65,7 @@ struct ContentView: View {
             TaskEditorView(task: task)
         }
         .sheet(isPresented: $isCategoryManagerPresented) {
-            //CategoryManagerView()
+            CategoryManagerView()
         }
     }
 
@@ -116,8 +116,21 @@ struct ContentView: View {
                     NavigationLink {
                         taskDetailView(task: task)
                     } label: {
-                        Text(task.name)
+                        HStack {
+                            Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(task.completed ? .green : .blue) // Dynamic color for task status
+                                .font(.title2)
+                            Text(task.name)
+                                .strikethrough(task.completed, color: .green) // Strikethrough for completed tasks
+                                .foregroundColor(task.completed ? .gray : .primary) // Dim completed tasks
+                                .fontWeight(task.completed ? .medium : .bold)
+                        }
+                        .padding(.vertical, 4)
+                        .background(task.completed ? Color.green.opacity(0.2) : Color.blue.opacity(0.1)) // Subtle background color
+                        .cornerRadius(8)
                     }
+                    .animation(.easeInOut, value: task.completed) // Smooth animation
+
                 }
             }
             .onDelete { offsets in
@@ -145,27 +158,113 @@ struct ContentView: View {
     private func taskDetailView(task: Task) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Constants.spacing) {
-                Text(task.name)
-                    .font(.headline)
+                // Header with Task Name
+                ZStack {
+                    RoundedRectangle(cornerRadius: ContentConstants.cornerRadius)
+                        .fill(LinearGradient(gradient: Gradient(colors: [.blue, .cyan]), startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .shadow(radius: 5)
+                    VStack(alignment: .center, spacing: 8) {
+                        Text("🎯 \(task.name)")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                    }
                     .padding()
-                
-                Text(task.completed ? "Completed" : "Incomplete")
-                    .font(.subheadline)
-                    .padding()
+                }
+                .padding(.bottom, Constants.padding)
+
+                // Toggle for Task Completion
+                VStack(alignment: .leading, spacing: Constants.padding / 2) {
+                    Toggle(isOn: Binding(
+                        get: { task.completed },
+                        set: { newValue in
+                            toggleCompleted(for: task)
+                        }
+                    )) {
+                        Text(task.completed ? "🎉 Marked as Complete!" : "🔄 Mark Task as Complete?")
+                            .font(.headline)
+                            .foregroundColor(task.completed ? .green : .primary)
+                    }
+                    .animation(.spring(), value: task.completed)
+                    .padding(.vertical, Constants.padding)
+                }
+
+                // Task Description
+                if !task.explanation.isEmpty {
+                    GroupBox(label: Label("📝 Description", systemImage: "text.book.closed")) {
+                        Text(task.explanation)
+                            .font(.body)
+                            .foregroundColor(.primary)
+                    }
+                    .padding(.bottom, Constants.padding)
+                }
+
+                // Time Period and Dates
+                GroupBox(label: Label("⏰ Task Details", systemImage: "calendar")) {
+                    VStack(alignment: .leading, spacing: Constants.padding / 2) {
+                        if let timePeriod = task.timePeriod {
+                            HStack {
+                                Text("Time Period:")
+                                    .fontWeight(.semibold)
+                                Text("\(timePeriod.name)")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        HStack {
+                            Text("📅 Date Added:")
+                                .fontWeight(.semibold)
+                            Text("\(task.timestamp.formatted(.dateTime.month().day().year()))")
+                                .foregroundColor(.secondary)
+                        }
+
+                        HStack {
+                            Text("🎯 Planned Completion:")
+                                .fontWeight(.semibold)
+                            Text("\(task.plannedCompletedDate.formatted(.dateTime.month().day().year()))")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                .padding(.bottom, Constants.padding)
+
+                // Progress Bar for Encouragement
+                VStack(alignment: .leading) {
+                    Text(task.completed ? "🎉 Great job! You completed this task." : "🚀 Keep it up!")
+                        .font(.headline)
+                        .foregroundColor(task.completed ? .green : .blue)
+                        .padding(.bottom, 5)
+
+                    ProgressView(value: task.completed ? 1.0 : 0.5)
+                        .progressViewStyle(LinearProgressViewStyle(tint: task.completed ? .green : .blue))
+                        .scaleEffect(x: 1, y: 2, anchor: .center)
+                        .animation(.easeInOut, value: task.completed)
+                }
+                .padding(.vertical, Constants.padding)
+
+                Spacer()
             }
             .padding()
-
         }
+        .navigationTitle("Task Details")
         .toolbar {
-            ToolbarItem {
-                Button("Edit Task", systemImage: ContentConstants.pencil) {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
                     taskToEdit = task
+                } label: {
+                    Label("Edit Task", systemImage: "pencil")
+                        .foregroundColor(.blue)
                 }
             }
         }
     }
+
+
+
+
     
     private struct ContentConstants {
+        static let cornerRadius: CGFloat = 12
         static let filledHeart = "heart.fill"
         static let heart = "heart"
         static let opacity: CGFloat = 0.2
