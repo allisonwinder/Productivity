@@ -25,6 +25,13 @@ struct ContentView: View {
                     } label: {
                         Text("Completed")
                     }
+                        ForEach(viewModel.allTimePeriods) { period in
+                            NavigationLink {
+                                taskListView(for: period.tasks)
+                            } label: {
+                                Text(period.name)
+                            }
+                    }
                 }
                 Section(header: Text("Other Categories")) {
                     ForEach(viewModel.allCategories) { category in
@@ -49,33 +56,33 @@ struct ContentView: View {
         } content: {
             taskListView(for: viewModel.allTasks)
         } detail: {
-            Text("Select a recipe")
+            Text("Select a task")
         }
         .sheet(item: $taskToEdit) { task in
-            //RecipeEditorView(recipe: recipe)
+            TaskEditorView(task: task)
         }
         .sheet(item: $newTaskToEdit) { task in
-            //RecipeEditorView(recipe: recipe)
+            TaskEditorView(task: task)
         }
         .sheet(isPresented: $isCategoryManagerPresented) {
             //CategoryManagerView()
         }
     }
 
-    private func addNewRecipe() {
-//        let newRecipe = Recipe(name: "", instructions: "", ingredients: "", categories: [], servings: 0, dateAdded: Date(), favorite: false,  notes: "" )
-//        newRecipeToEdit = newRecipe
+    private func addNewTask() {
+        let newTask = Task(name: "", explanation: "", timestamp: Date(), completed: false, timePeriod: viewModel.allTimePeriods[1], categories: [], plannedCompletedDate:Date())
+        newTaskToEdit = newTask
     }
     
-    private func deleteRecipe(_ task: Task) {
-        //viewModel.deleteTask(task)
+    private func deleteTask(_ task: Task) {
+        viewModel.deleteTask(task)
     }
     
-    private func deleteRecipes(at offsets: IndexSet, from tasks: [Task]) {
-//        let recipesToDelete = offsets.map { recipes[$0] }
-//        for recipe in recipesToDelete {
-//            deleteRecipe(recipe)
-//        }
+    private func deleteTasks(at offsets: IndexSet, from tasks: [Task]) {
+        let tasksToDelete = offsets.map { tasks[$0] }
+        for task in tasksToDelete {
+            deleteTask(task)
+        }
     }
 
     private func getFilteredTasks(from tasks: [Task]) -> [Task] {
@@ -86,8 +93,8 @@ struct ContentView: View {
     }
 
     
-    private func toggleFavorite(for task: Task) {
-        //viewModel.toggleFavorite(recipe: recipe)
+    private func toggleCompleted(for task: Task) {
+        viewModel.toggleCompleted(task: task)
     }
     
     private func taskListView(for tasks: [Task]) -> some View {
@@ -98,7 +105,7 @@ struct ContentView: View {
                 if isEditing {
                     HStack {
                         Button(action: {
-                            //deleteRecipe(task)
+                            deleteTask(task)
                         }) {
                             Image(systemName: Constants.delete)
                                 .foregroundColor(.red)
@@ -114,7 +121,7 @@ struct ContentView: View {
                 }
             }
             .onDelete { offsets in
-                deleteRecipes(at: offsets, from: filteredTasks)
+                deleteTasks(at: offsets, from: filteredTasks)
             }
 
         }
@@ -125,8 +132,8 @@ struct ContentView: View {
                 }
             }
             ToolbarItem {
-                Button(action: addNewRecipe) {
-                    Label("Add Recipe", systemImage: Constants.add)
+                Button(action: addNewTask) {
+                    Label("Add Task", systemImage: Constants.add)
                 }
             }
         }
@@ -151,7 +158,7 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItem {
-                Button("Edit Recipe", systemImage: ContentConstants.pencil) {
+                Button("Edit Task", systemImage: ContentConstants.pencil) {
                     taskToEdit = task
                 }
             }

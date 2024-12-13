@@ -14,15 +14,16 @@ func Data(context: ModelContext) {
     let monthly = TimePeriod(name: "monthly")
     let yearly = TimePeriod(name: "yearly")
     
+    let allCat = Category(name: "all")
     let personal = Category(name: "personal")
     let work = Category(name: "work")
     let school = Category(name: "school")
     let church = Category(name: "church")
     let health = Category(name: "health")
     
-    let mobiledev = Task(name: "mobile dev", explanation: "I need to finish it in 3 hours", timestamp: Date(), completed: false, timePeriod: weekly, categories: [school], plannedCompletedDate: ISO8601DateFormatter().date(from: "2024-12-18T00:00:00Z") ?? Date())
+    let mobiledev = Task(name: "mobile dev", explanation: "I need to finish it in 3 hours", timestamp: Date(), completed: false, timePeriod: weekly, categories: [school, allCat], plannedCompletedDate: ISO8601DateFormatter().date(from: "2024-12-18T00:00:00Z") ?? Date())
     
-    let finishLazyTriathalon = Task(name: "lazy triathalon", explanation: "Complete the lazy man trialathon in the month of October", timestamp: Date(), completed: true, timePeriod: daily, categories: [health, personal], plannedCompletedDate: ISO8601DateFormatter().date(from: "2024-12-18T00:00:00Z") ?? Date())
+    let finishLazyTriathalon = Task(name: "lazy triathalon", explanation: "Complete the lazy man trialathon in the month of October", timestamp: Date(), completed: true, timePeriod: daily, categories: [health, personal, allCat], plannedCompletedDate: ISO8601DateFormatter().date(from: "2024-12-18T00:00:00Z") ?? Date())
     
     context.insert(daily)
     context.insert(weekly)
@@ -32,12 +33,15 @@ func Data(context: ModelContext) {
     daily.tasks.append(finishLazyTriathalon)
     weekly.tasks.append(mobiledev)
     
+    context.insert(allCat)
     context.insert(personal)
     context.insert(work)
     context.insert(school)
     context.insert(church)
     context.insert(health)
     
+    allCat.tasks.append(mobiledev)
+    allCat.tasks.append(finishLazyTriathalon)
     personal.tasks.append(finishLazyTriathalon)
     health.tasks.append(finishLazyTriathalon)
     school.tasks.append(mobiledev)

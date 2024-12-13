@@ -69,4 +69,80 @@ class ProductivityViewModel {
         }
     }
     
+    
+    //MARK: - User Intents
+        
+    func addCategory(name: String) {
+        guard !name.isEmpty, !allCategories.contains(where: { $0.name == name }) else { return }
+        let newCategory = Category(name: name)
+        modelContext.insert(newCategory)
+        saveContext()
+        fetchData()
+    }
+
+    
+    func deleteCategory(category: Category) {
+        modelContext.delete(category)
+        saveContext()
+        fetchData()
+    }
+        
+
+    
+    func deleteTask(_ task: Task) {
+        for category in task.categories {
+            category.tasks.removeAll { $0.id == task.id }
+        }
+        modelContext.delete(task)
+        saveContext()
+        fetchData()
+    }
+
+        
+
+    func saveContext() {
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error saving context: \(error)")
+        }
+    }
+
+    func saveTask(_ task: Task) {
+        
+        let allCategory = allCategories[0]
+        
+        if !task.categories.contains(allCategory) {
+            task.categories.append(allCategory)
+        }
+        
+        do {
+            try modelContext.save()
+            print("saved")
+        } catch {
+            print("Error saving recipe: \(error)")
+        }
+        fetchData()
+        fetchCompleted()
+    }
+    
+    func toggleCompleted(task: Task) {
+        task.completed.toggle()
+        do {
+            try modelContext.save()
+            saveContext()
+        } catch {
+            print("Error saving context: \(error)")
+        }
+        fetchData()
+        fetchCompleted()
+    }
+    
+    func updateCategory(category: Category, newName: String) {
+        guard !newName.isEmpty else { return }
+        category.name = newName
+        saveContext()
+        fetchData()
+    }
+    
 }
